@@ -62,7 +62,7 @@ wheels = [
 ]
 
 [[package]]
-name = "p5"
+name = "p2"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
