@@ -39,7 +39,7 @@ def run_producer():
             "cancelled": vuelo["CANCELLED"],
             "cancellation_code": vuelo["CANCELLATION_CODE"],
             "diverted": vuelo["DIVERTED"],
-            "timestamp_ingestion": datetime.datetime.utcnow().isoformat()
+            "processing_date": datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d')
         }
 
         # Enviar a Kinesis

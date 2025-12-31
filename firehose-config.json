@@ -1,0 +1,39 @@
+{
+    "BucketARN": "arn:aws:s3:::datalake-flight-first-half-april-2020-905418087435",
+    "RoleARN": "arn:aws:iam::905418087435:role/LabRole",
+    "Prefix": "raw/flights_per_day/processing_date=!{partitionKeyFromLambda:processing_date}/",
+    "ErrorOutputPrefix": "errors/!{firehose:error-output-type}/",
+    "BufferingHints": {
+        "SizeInMBs": 64,
+        "IntervalInSeconds": 60
+    },
+    "CompressionFormat": "UNCOMPRESSED",
+    "DynamicPartitioningConfiguration": {
+        "Enabled": true,
+        "RetryOptions": {
+            "DurationInSeconds": 300
+        }
+    },
+    "ProcessingConfiguration": {
+        "Enabled": true,
+        "Processors": [
+            {
+                "Type": "Lambda",
+                "Parameters": [
+                    {
+                        "ParameterName": "LambdaArn",
+                        "ParameterValue": "arn:aws:lambda:us-east-1:905418087435:function:flight-firehose-lambda"
+                    },
+                    {
+                        "ParameterName": "BufferSizeInMBs",
+                        "ParameterValue": "0.2"
+                    },
+                    {
+                        "ParameterName": "BufferIntervalInSeconds",
+                        "ParameterValue": "30"
+                    }
+                ]
+            }
+        ]
+    }
+}
