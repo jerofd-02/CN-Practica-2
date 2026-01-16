@@ -4,26 +4,35 @@ import time
 from loguru import logger
 import datetime
 
-# CONFIGURACIÓN
-STREAM_NAME = 'flights-stream'
+# Configuración
+STREAM_NAME = 'flights-stream'      # Nombre del Kinesis Data Stream
 REGION = 'us-east-1' # Cambia si usas otra región
-INPUT_FILE = 'flights_sample_first_half_april_2020.json'
+INPUT_FILE = 'flights_sample_first_half_april_2020.json' # Dataset de entrada
 
+# Cliente de Kinesis
 kinesis = boto3.client('kinesis', region_name=REGION)
 
 def load_data(file_path):
+    """
+    Carga el fichero JSON con los vuelos históricos
+    """
     with open(file_path, 'r') as f:
         return json.load(f)
 
 def run_producer():
+    """
+    Envía los registros de vuelos uno a uno al stream de Kinesis
+    simulando un flujo en tiempo real.
+    """
     data = load_data(INPUT_FILE)
     records_sent = 0
 
     logger.info(f"Iniciando transmisión al stream: {STREAM_NAME}...")
 
-    # Iteramos sobre los datos de los vuelos
+    # Iteramos sobre los vuelos del dataset
     for vuelo in data:
-        # Estructura del mensaje a enviar
+
+        # Payload enviado a Kinesis (evento individual)
         payload = {
             "flight_date": vuelo["FL_DATE"],
             "airline": vuelo["AIRLINE"],
@@ -41,18 +50,23 @@ def run_producer():
             "diverted": vuelo["DIVERTED"]
         }
 
-        # Enviar a Kinesis
-        response = kinesis.put_record (
-                StreamName=STREAM_NAME,
-                Data=json.dumps(payload),
-                PartitionKey=vuelo["FL_DATE"] # Usamos la fecha del vuelo como clave de partición
+        # Envío del registro a Kinesis
+        response = kinesis.put_record(
+            StreamName=STREAM_NAME,
+            Data=json.dumps(payload),
+            PartitionKey=vuelo["FL_DATE"]  # Clave de partición
         )
+
         records_sent += 1
 
-        logger.info(f"Vuelo {vuelo['AIRLINE_CODE']}{vuelo['FL_NUMBER']} {vuelo['ORIGIN']}->{vuelo['DEST']} enviado al shard {response['ShardId']}")
-            
-        # Pequeña pausa para simular streaming y no saturar de golpe
-        time.sleep(0.1) 
+        logger.info(
+            f"Vuelo {vuelo['AIRLINE_CODE']}{vuelo['FL_NUMBER']} "
+            f"{vuelo['ORIGIN']}->{vuelo['DEST']} "
+            f"enviado al shard {response['ShardId']}"
+        )
+
+        # Pausa para simular streaming (no envío masivo)
+        time.sleep(0.1)
 
     logger.info(f"Fin de la transmisión. Total registros enviados: {records_sent}")
 

@@ -1,5 +1,6 @@
 import json
 import base64
+import datetime
 
 def lambda_handler(event, context):
     output = []
@@ -7,8 +8,8 @@ def lambda_handler(event, context):
         payload = base64.b64decode(record['data']).decode('utf-8')
         data_json = json.loads(payload)
         
-        # Get the partition key (YYYY-MM-DD format)
-        processing_date = data_json.get('processing_date', '2025-01-01') 
+        # Add processing timestamp and create the partition key (YYYY-MM-DD format)
+        processing_date = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d')
 
         output_record = {
             'recordId': record['recordId'],
