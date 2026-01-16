@@ -1,10 +1,10 @@
-# monthly_aggregation.py
+# daily_aggregation.py
 import sys
 import logging
 from pyspark.context import SparkContext
 from awsglue.context import GlueContext
 from awsglue.utils import getResolvedOptions
-from pyspark.sql.functions import col, sum as spark_sum, avg, substring
+from pyspark.sql.functions import col, sum as spark_sum, avg, count
 from awsglue.dynamicframe import DynamicFrame
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -17,35 +17,47 @@ def main():
     output_path = args['output_path']
 
     logger.info(f"Database: {database}, Table: {table}, Output: {output_path}")
-    
+
     sc = SparkContext()
     glueContext = GlueContext(sc)
 
-    df = df.withColumn("fecha", substring(col("timestamp_origen"), 1, 7))
-    
-    daily_df = df.groupBy("fecha", "tipo") \
+    # Leer desde Glue Catalog usando GlueContext
+    dynamic_frame = glueContext.create_dynamic_frame.from_catalog(
+        database=database,
+        table_name=table
+    )
+
+    # Convertir a Spark DataFrame
+    df = dynamic_frame.toDF()
+    df.printSchema()
+    logger.info(f"Registros leídos: {df.count()}")
+
+    # Agregación diaria
+    daily_df = df.groupBy("flight_date") \
         .agg(
-            spark_sum("valor").alias("valor_total"),
-            avg("porcentaje").alias("porcentaje_promedio")
+            spark_sum(col("cancelled")).alias("vuelos_cancelados"),
+            spark_sum((col("cancelled") == 0).cast("int")).alias("vuelos_realizados"),
+            count("*").alias("vuelos_totales"),
+            (avg(col("cancelled")) * 100).alias("porcentaje_promedio")
         ) \
-        .orderBy("fecha", "tipo")
-    
+        .orderBy("flight_date")
+
     output_dynamic_frame = DynamicFrame.fromDF(daily_df, glueContext, "output")
     
     logger.info(f"Registros agregados: {output_dynamic_frame.count()}")
-    
+
     # Escribir usando GlueContext
     glueContext.write_dynamic_frame.from_options(
         frame=output_dynamic_frame,
         connection_type="s3",
         connection_options={
             "path": output_path,
-            "partitionKeys": ["fecha"]
+            "partitionKeys": ["flight_date"]
         },
         format="parquet",
         format_options={"compression": "snappy"}
     )
-    
+
     logger.info(f"Completado. Registros: {daily_df.count()}")
 
 if __name__ == "__main__":

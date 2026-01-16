@@ -1,6 +1,5 @@
 import json
 import base64
-import datetime
 
 def lambda_handler(event, context):
     output = []

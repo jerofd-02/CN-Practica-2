@@ -1,7 +1,7 @@
 {
-    "BucketARN": "arn:aws:s3:::datalake-flight-first-half-april-2020-905418087435",
+    "BucketARN": "arn:aws:s3:::datalake-flights-april-2020-905418087435",
     "RoleARN": "arn:aws:iam::905418087435:role/LabRole",
-    "Prefix": "raw/flights_per_day/processing_date=!{partitionKeyFromLambda:processing_date}/",
+    "Prefix": "raw/flights_per_minute/processing_date=!{partitionKeyFromLambda:processing_date}/",
     "ErrorOutputPrefix": "errors/!{firehose:error-output-type}/",
     "BufferingHints": {
         "SizeInMBs": 64,

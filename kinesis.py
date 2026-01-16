@@ -20,7 +20,7 @@ def run_producer():
     records_sent = 0
 
     logger.info(f"Iniciando transmisión al stream: {STREAM_NAME}...")
-    
+
     # Iteramos sobre los datos de los vuelos
     for vuelo in data:
         # Estructura del mensaje a enviar
@@ -38,15 +38,14 @@ def run_producer():
             "distance": vuelo["DISTANCE"],
             "cancelled": vuelo["CANCELLED"],
             "cancellation_code": vuelo["CANCELLATION_CODE"],
-            "diverted": vuelo["DIVERTED"],
-            "processing_date": datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d')
+            "diverted": vuelo["DIVERTED"]
         }
 
         # Enviar a Kinesis
         response = kinesis.put_record (
                 StreamName=STREAM_NAME,
                 Data=json.dumps(payload),
-                PartitionKey=vuelo['AIRLINE_CODE'] # Usamos el tipo como clave de partición
+                PartitionKey=vuelo["FL_DATE"] # Usamos la fecha del vuelo como clave de partición
         )
         records_sent += 1
 
